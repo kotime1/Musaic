@@ -1,32 +1,18 @@
 // ─── Canvas Renderer ──────────────────────────────────────────────────────────
-// Draws the wallpaper onto an HTMLCanvasElement.
 
 import { computeLayout } from './layout.js';
 
-/**
- * Draw the full wallpaper to a canvas.
- *
- * @param {HTMLCanvasElement} canvas
- * @param {object} config
- * @param {string}   config.backgroundColor   - CSS color string
- * @param {string}   [config.backgroundImage] - URL for custom background
- * @param {number}   config.backgroundDim     - 0–1 dimming factor
- * @param {Array}    config.cells             - [{ imageUrl, label }]
- * @param {'grid'|'brick'} config.theme
- * @param {number}   config.gap
- * @param {number}   config.padding
- * @param {number}   config.borderRadius      - px
- */
 export async function renderWallpaper(canvas, config) {
   const {
     backgroundColor = 'rgb(15, 15, 20)',
-    backgroundImage = null,
+    backgroundImageUrl = null,       // fixed: was 'backgroundImage'
     backgroundDim = 0.4,
     cells = [],
     theme = 'grid',
     gap = 12,
     padding = 24,
-    borderRadius = 8,
+    borderRadius = 8,                // treated as % of half-cell (0=square, 100=circle)
+    cellSizeOverride = null,
   } = config;
 
   const ctx = canvas.getContext('2d');
@@ -36,15 +22,26 @@ export async function renderWallpaper(canvas, config) {
   ctx.clearRect(0, 0, W, H);
 
   // ── Background ──────────────────────────────────────────────────────────────
-  if (backgroundImage) {
-    const img = await loadImage(backgroundImage);
-    ctx.drawImage(img, 0, 0, W, H);
+  if (backgroundImageUrl) {
+    try {
+      const img = await loadImage(backgroundImageUrl);
+      // cover-fit the background image
+      const scale = Math.max(W / img.width, H / img.height);
+      const dw = img.width * scale;
+      const dh = img.height * scale;
+      const dx = (W - dw) / 2;
+      const dy = (H - dh) / 2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+    } catch {
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, W, H);
+    }
   } else {
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, W, H);
   }
 
-  // Dim overlay
+  // Dim overlay (applied regardless of background type)
   if (backgroundDim > 0) {
     ctx.fillStyle = `rgba(0,0,0,${backgroundDim})`;
     ctx.fillRect(0, 0, W, H);
@@ -52,16 +49,20 @@ export async function renderWallpaper(canvas, config) {
 
   // ── Cell layout ─────────────────────────────────────────────────────────────
   const n = cells.length;
-  const { cells: layout } = computeLayout({ n, theme, canvasW: W, canvasH: H, gap, padding });
+  const { cells: layout, cellSize } = computeLayout({
+    n, theme, canvasW: W, canvasH: H, gap, padding, cellSizeOverride,
+  });
+
+  // borderRadius is 0–100 representing % of half-cell → 0=square, 100=circle
+  const r = Math.min((borderRadius / 100) * (cellSize / 2), cellSize / 2);
 
   for (let i = 0; i < layout.length; i++) {
     const { x, y, width, height } = layout[i];
     const cell = cells[i];
 
     if (!cell?.imageUrl) {
-      // Empty placeholder
       ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      roundRect(ctx, x, y, width, height, borderRadius);
+      roundRect(ctx, x, y, width, height, r);
       ctx.fill();
       continue;
     }
@@ -69,21 +70,18 @@ export async function renderWallpaper(canvas, config) {
     try {
       const img = await loadImage(cell.imageUrl);
       ctx.save();
-      roundRect(ctx, x, y, width, height, borderRadius);
+      roundRect(ctx, x, y, width, height, r);
       ctx.clip();
       ctx.drawImage(img, x, y, width, height);
       ctx.restore();
     } catch {
       ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      roundRect(ctx, x, y, width, height, borderRadius);
+      roundRect(ctx, x, y, width, height, r);
       ctx.fill();
     }
   }
 }
 
-/**
- * Export canvas as a PNG download.
- */
 export function exportAsPNG(canvas, filename = 'musaic-wallpaper.png') {
   const link = document.createElement('a');
   link.download = filename;

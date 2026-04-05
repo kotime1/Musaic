@@ -9,13 +9,10 @@ export default function Builder() {
   const canvasRef = useRef(null);
   const [rendering, setRendering] = useState(false);
 
-  // Fetch on mount
   useEffect(() => { fetchData(); }, []);
 
-  // Re-render canvas when config or cells change
   useEffect(() => {
     if (!canvasRef.current || cells.length === 0) return;
-
     setRendering(true);
     renderWallpaper(canvasRef.current, {
       backgroundColor: config.backgroundColor,
@@ -26,6 +23,7 @@ export default function Builder() {
       gap: config.gap,
       padding: config.padding,
       borderRadius: config.borderRadius,
+      cellSizeOverride: config.cellSizeOverride,
     }).finally(() => setRendering(false));
   }, [config, cells]);
 
@@ -46,9 +44,15 @@ export default function Builder() {
     updateConfig('backgroundImageUrl', url);
   }
 
+  // Radius label: 0 = Square, 100 = Circle
+  const radiusLabel = config.borderRadius === 0
+    ? 'Square'
+    : config.borderRadius === 100
+      ? 'Circle'
+      : `${config.borderRadius}%`;
+
   return (
     <div className={styles.layout}>
-      {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <span className={styles.wordmark}>Musaic</span>
@@ -68,11 +72,7 @@ export default function Builder() {
             value={Object.keys(TIME_RANGES).find(k => TIME_RANGES[k] === config.timeRange)}
             onChange={v => updateConfig('timeRange', TIME_RANGES[v])}
           />
-          <button
-            className={styles.fetchBtn}
-            onClick={fetchData}
-            disabled={loading}
-          >
+          <button className={styles.fetchBtn} onClick={fetchData} disabled={loading}>
             {loading ? 'Loading…' : 'Refresh'}
           </button>
           {error && <p className={styles.error}>{error}</p>}
@@ -118,12 +118,31 @@ export default function Builder() {
             value={config.padding}
             onChange={v => updateConfig('padding', v)}
           />
+        </Section>
+
+        <Section title="Cell Style">
           <Slider
-            label={`Corner radius: ${config.borderRadius}px`}
-            min={0} max={60}
+            label={`Roundness: ${radiusLabel}`}
+            min={0} max={100}
             value={config.borderRadius}
             onChange={v => updateConfig('borderRadius', v)}
           />
+          <div className={styles.cellSizeRow}>
+            <Slider
+              label={`Cell size${config.cellSizeOverride ? `: ${config.cellSizeOverride}px` : ': Auto'}`}
+              min={40} max={400}
+              value={config.cellSizeOverride ?? 120}
+              onChange={v => updateConfig('cellSizeOverride', v)}
+              disabled={!config.cellSizeOverride}
+            />
+            <button
+              className={`${styles.toggleBtn} ${config.cellSizeOverride ? styles.toggleBtnActive : ''}`}
+              onClick={() => updateConfig('cellSizeOverride', config.cellSizeOverride ? null : 120)}
+              title={config.cellSizeOverride ? 'Switch to auto' : 'Set manually'}
+            >
+              {config.cellSizeOverride ? 'Manual' : 'Auto'}
+            </button>
+          </div>
         </Section>
 
         <Section title="Background">
@@ -133,14 +152,11 @@ export default function Builder() {
             onChange={v => updateConfig('backgroundColor', v)}
           />
           <label className={styles.fileLabel}>
-            Import image
+            {config.backgroundImageUrl ? '↺ Replace image' : 'Import image'}
             <input type="file" accept="image/*" onChange={handleBgImport} hidden />
           </label>
           {config.backgroundImageUrl && (
-            <button
-              className={styles.clearBtn}
-              onClick={() => updateConfig('backgroundImageUrl', null)}
-            >
+            <button className={styles.clearBtn} onClick={() => updateConfig('backgroundImageUrl', null)}>
               Remove background image
             </button>
           )}
@@ -157,7 +173,6 @@ export default function Builder() {
         </button>
       </aside>
 
-      {/* ── Canvas Preview ──────────────────────────────────────────── */}
       <main className={styles.preview}>
         <div className={styles.canvasWrap}>
           <canvas
@@ -172,7 +187,7 @@ export default function Builder() {
   );
 }
 
-// ── Small UI components ───────────────────────────────────────────────────────
+// ── UI Components ─────────────────────────────────────────────────────────────
 
 function Section({ title, children }) {
   return (
@@ -203,20 +218,16 @@ function Select({ label, options, value, onChange }) {
   return (
     <label className={styles.field}>
       <span className={styles.fieldLabel}>{label}</span>
-      <select
-        className={styles.select}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-      >
+      <select className={styles.select} value={value} onChange={e => onChange(e.target.value)}>
         {options.map(o => <option key={o}>{o}</option>)}
       </select>
     </label>
   );
 }
 
-function Slider({ label, min, max, value, onChange }) {
+function Slider({ label, min, max, value, onChange, disabled = false }) {
   return (
-    <label className={styles.field}>
+    <label className={`${styles.field} ${disabled ? styles.fieldDisabled : ''}`}>
       <span className={styles.fieldLabel}>{label}</span>
       <input
         type="range"
@@ -224,6 +235,7 @@ function Slider({ label, min, max, value, onChange }) {
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         className={styles.slider}
+        disabled={disabled}
       />
     </label>
   );
@@ -245,20 +257,17 @@ function NumberInput({ label, value, onChange, min, max }) {
 }
 
 function ColorInput({ label, value, onChange }) {
-  // value is "rgb(r, g, b)" — convert for color picker
   const toHex = (rgb) => {
     const m = rgb.match(/\d+/g);
     if (!m) return '#000000';
     return '#' + m.map(v => parseInt(v).toString(16).padStart(2, '0')).join('');
   };
-
   const fromHex = (hex) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgb(${r}, ${g}, ${b})`;
   };
-
   return (
     <label className={styles.field}>
       <span className={styles.fieldLabel}>{label}</span>

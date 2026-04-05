@@ -29,10 +29,10 @@ Turn your Spotify listening history into a phone wallpaper. Musaic pulls your to
 ### 2. Configure environment
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-Edit .env:
+Edit .env.local:
 
 ```
 VITE_SPOTIFY_CLIENT_ID=your_client_id_here

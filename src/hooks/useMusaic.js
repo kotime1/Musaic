@@ -32,7 +32,8 @@ const DEFAULT_CONFIG = {
   theme: 'grid',            // 'grid' | 'brick'
   gap: 12,
   padding: 24,
-  borderRadius: 8,
+  borderRadius: 10,
+  cellSizeOverride: null,
 
   // Background
   backgroundColor: 'rgb(15, 15, 20)',

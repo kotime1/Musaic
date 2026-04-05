@@ -237,3 +237,38 @@
   border-radius: 12px;
   box-shadow: 0 24px 80px rgba(0,0,0,0.7);
 }
+
+.fieldDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.cellSizeRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.cellSizeRow .field {
+  flex: 1;
+}
+
+.toggleBtn {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.4);
+  border-radius: 6px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+  margin-bottom: 1px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.toggleBtnActive {
+  background: rgba(29,185,84,0.15);
+  border-color: rgba(29,185,84,0.4);
+  color: #1DB954;
+}
