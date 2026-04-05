@@ -24,6 +24,7 @@ export default function Builder() {
       padding: config.padding,
       borderRadius: config.borderRadius,
       cellSizeOverride: config.cellSizeOverride,
+      columns: config.columns,
     }).finally(() => setRendering(false));
   }, [config, cells]);
 
@@ -102,18 +103,24 @@ export default function Builder() {
           />
           <Slider
             label={`Cells: ${config.cellCount}`}
-            min={4} max={25}
+            min={1} max={50}
             value={config.cellCount}
             onChange={v => updateConfig('cellCount', v)}
           />
           <Slider
-            label={`Gap: ${config.gap}px`}
+            label={`Columns: ${config.columns}`}
+            min={1} max={Math.min(config.cellCount, 10)}
+            value={Math.min(config.columns, config.cellCount)}
+            onChange={v => updateConfig('columns', v)}
+          />
+          <Slider
+            label={`Spacing: ${config.gap}px`}
             min={0} max={40}
             value={config.gap}
             onChange={v => updateConfig('gap', v)}
           />
           <Slider
-            label={`Padding: ${config.padding}px`}
+            label={`Margin: ${config.padding}px`}
             min={0} max={80}
             value={config.padding}
             onChange={v => updateConfig('padding', v)}

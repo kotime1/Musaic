@@ -1,25 +1,24 @@
 // ─── useMusaic ────────────────────────────────────────────────────────────────
-// Central state for the wallpaper builder.
 
 import { useState, useCallback } from 'react';
 import { getTopAlbums, getTopArtists } from '../lib/spotify.js';
 import { sampleBlendedColor } from '../lib/colorSampler.js';
 
 export const DEVICE_PRESETS = {
-  'Pixel 8 Pro':      { width: 1344, height: 2992 },
-  'iPhone 15 Pro':    { width: 1179, height: 2556 },
-  'Custom':           { width: 1080, height: 1920 },
+  'Pixel 8 Pro':   { width: 1344, height: 2992 },
+  'iPhone 15 Pro': { width: 1179, height: 2556 },
+  'Custom':        { width: 1080, height: 1920 },
 };
 
 export const TIME_RANGES = {
-  'Last 4 weeks':  'short_term',
-  '6 months':      'medium_term',
-  'All time':      'long_term',
+  'Last 4 weeks': 'short_term',
+  '6 months':     'medium_term',
+  'All time':     'long_term',
 };
 
 const DEFAULT_CONFIG = {
   // Data
-  source: 'albums',         // 'albums' | 'artists'
+  source: 'albums',
   timeRange: 'medium_term',
 
   // Canvas
@@ -29,9 +28,10 @@ const DEFAULT_CONFIG = {
 
   // Layout
   cellCount: 9,
-  theme: 'grid',            // 'grid' | 'brick'
-  gap: 12,
-  padding: 24,
+  columns: 3,           // user-controlled; rows = ceil(cellCount / columns)
+  theme: 'grid',
+  gap: 12,              // renamed to 'spacing' in UI
+  padding: 24,          // renamed to 'margin' in UI
   borderRadius: 10,
   cellSizeOverride: null,
 
@@ -43,7 +43,7 @@ const DEFAULT_CONFIG = {
 
 export function useMusaic() {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
-  const [cells, setCells] = useState([]);       // [{ id, name, imageUrl, custom }]
+  const [cells, setCells] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -51,12 +51,19 @@ export function useMusaic() {
     ? { width: config.customWidth, height: config.customHeight }
     : DEVICE_PRESETS[config.device];
 
-  // ── Update a single config value ──────────────────────────────────────────
   const updateConfig = useCallback((key, value) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+    setConfig(prev => {
+      const next = { ...prev, [key]: value };
+
+      // When cell count changes, clamp columns so columns <= cellCount
+      if (key === 'cellCount') {
+        next.columns = Math.min(prev.columns, value);
+      }
+
+      return next;
+    });
   }, []);
 
-  // ── Fetch data from Spotify and populate cells ────────────────────────────
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -74,14 +81,12 @@ export function useMusaic() {
         custom: false,
       }));
 
-      // Pad with empty cells if fewer results than requested
       while (newCells.length < config.cellCount) {
         newCells.push({ id: `empty-${newCells.length}`, name: '', imageUrl: null, custom: false });
       }
 
       setCells(newCells);
 
-      // Auto-sample background color from artwork
       const imageUrls = newCells.map(c => c.imageUrl).filter(Boolean);
       const sampled = await sampleBlendedColor(imageUrls);
       updateConfig('backgroundColor', sampled);
@@ -93,7 +98,6 @@ export function useMusaic() {
     }
   }, [config.source, config.timeRange, config.cellCount, updateConfig]);
 
-  // ── Swap a single cell ────────────────────────────────────────────────────
   const swapCell = useCallback((index, newCell) => {
     setCells(prev => {
       const next = [...prev];

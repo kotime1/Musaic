@@ -13,6 +13,7 @@ export async function renderWallpaper(canvas, config) {
     padding = 24,
     borderRadius = 8,                // treated as % of half-cell (0=square, 100=circle)
     cellSizeOverride = null,
+    columns = 3,
   } = config;
 
   const ctx = canvas.getContext('2d');
@@ -50,7 +51,7 @@ export async function renderWallpaper(canvas, config) {
   // ── Cell layout ─────────────────────────────────────────────────────────────
   const n = cells.length;
   const { cells: layout, cellSize } = computeLayout({
-    n, theme, canvasW: W, canvasH: H, gap, padding, cellSizeOverride,
+    n, columns, theme, canvasW: W, canvasH: H, gap, padding, cellSizeOverride,
   });
 
   // borderRadius is 0–100 representing % of half-cell → 0=square, 100=circle
