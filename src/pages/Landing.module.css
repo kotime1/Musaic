@@ -1,0 +1,63 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #080810;
+}
+
+.content {
+  text-align: center;
+  max-width: 400px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wordmark {
+  font-family: 'Georgia', serif;
+  font-size: 4rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin: 0;
+}
+
+.tagline {
+  color: rgba(255,255,255,0.5);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.loginBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #1DB954;
+  color: #000;
+  border: none;
+  border-radius: 500px;
+  padding: 0.8rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
+  margin-top: 0.5rem;
+}
+
+.loginBtn:hover { opacity: 0.9; transform: scale(1.02); }
+.loginBtn:active { transform: scale(0.98); }
+
+.error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.fine {
+  color: rgba(255,255,255,0.25);
+  font-size: 0.75rem;
+  margin: 0;
+}
